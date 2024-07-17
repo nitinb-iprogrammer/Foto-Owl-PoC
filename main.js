@@ -5,10 +5,10 @@ const { S3Client } = require('@aws-sdk/client-s3');
 const { Upload } = require('@aws-sdk/lib-storage');
 require('dotenv').config();
 
-const YOUR_ACCESS_KEY = process.env.YOUR_ACCESS_KEY || "AKIAXHMBFFIMICSUQG6S";
-const YOUR_SECRET_KEY = process.env.YOUR_SECRET_KEY || "dj2Z9pqhMYWAIwYphKaTz95IcfMFxMBqw2TEwiDv";
-const YOUR_BUCKET_REGION = process.env.YOUR_BUCKET_REGION || "ap-south-1";
-const YOUR_BUCKET_NAME = process.env.YOUR_BUCKET_NAME || "test-electronjs";
+const YOUR_ACCESS_KEY = process.env.YOUR_ACCESS_KEY //|| "AKIAXHMBFFIMICSUQG6S";
+const YOUR_SECRET_KEY = process.env.YOUR_SECRET_KEY //|| "dj2Z9pqhMYWAIwYphKaTz95IcfMFxMBqw2TEwiDv";
+const YOUR_BUCKET_REGION = process.env.YOUR_BUCKET_REGION //|| "ap-south-1";
+const YOUR_BUCKET_NAME = process.env.YOUR_BUCKET_NAME //|| "test-electronjs";
 
 const s3Client = new S3Client({
   region: YOUR_BUCKET_REGION,
