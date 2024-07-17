@@ -19,7 +19,7 @@ const s3Client = new S3Client({
   },
 });
 
-const WATCH_FOLDER = path.join(app.getPath('userData'), 'upload-folder');
+const WATCH_FOLDER = path.join(app.getPath('documents'), 'foto-owl-upload-folder');
 fs.mkdirSync(WATCH_FOLDER, { recursive: true });
 
 let mainWindow;
@@ -51,11 +51,7 @@ ipcMain.on('upload-files', async (event, files) => {
 });
 
 ipcMain.on('sync-folder', async (event) => {
-  const files = fs.readdirSync(WATCH_FOLDER).map(file => {
-    const filePath = path.join(WATCH_FOLDER, file);
-    const fileSize = fs.statSync(filePath).size;
-    return { path: filePath, name: file, size: fileSize };
-  });
+  const files = listFilesInFolder(WATCH_FOLDER);
   await uploadFiles(event, files);
 });
 
@@ -71,7 +67,7 @@ async function uploadFiles(event, files) {
       client: s3Client,
       params: {
         Bucket: YOUR_BUCKET_NAME,
-        Key: file.name,
+        Key: file.relativePath,
         Body: fileContent,
       },
     });
@@ -142,10 +138,35 @@ function startWatchingFolder() {
   watcher.on('add', async (filePath) => {
     const fileName = path.basename(filePath);
     const fileSize = fs.statSync(filePath).size;
-    const files = [{ path: filePath, name: fileName, size: fileSize }];
+    const relativePath = path.relative(WATCH_FOLDER, filePath);
+    const files = [{ path: filePath, name: fileName, size: fileSize, relativePath }];
     
     await uploadFiles(mainWindow.webContents, files);
   });
 
   console.log(`Watching folder: ${WATCH_FOLDER}`);
+}
+
+function listFilesInFolder(folderPath) {
+  const files = [];
+
+  function explore(folderPath) {
+    const items = fs.readdirSync(folderPath);
+
+    items.forEach(item => {
+      const itemPath = path.join(folderPath, item);
+      const stats = fs.statSync(itemPath);
+
+      if (stats.isDirectory()) {
+        explore(itemPath);
+      } else {
+        const fileSize = stats.size;
+        const relativePath = path.relative(WATCH_FOLDER, itemPath);
+        files.push({ path: itemPath, name: item, size: fileSize, relativePath });
+      }
+    });
+  }
+
+  explore(folderPath);
+  return files;
 }
