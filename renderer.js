@@ -2,6 +2,7 @@ const { ipcRenderer } = require('electron');
 
 const fileInput = document.getElementById('fileInput');
 const uploadButton = document.getElementById('uploadButton');
+const syncButton = document.getElementById('syncButton'); // New Sync button
 
 fileInput.addEventListener('change', () => {
   if (fileInput.files.length > 0) {
@@ -19,6 +20,10 @@ uploadButton.addEventListener('click', () => {
     name: file.name,
     size: file.size
   })));
+});
+
+syncButton.addEventListener('click', () => {
+  ipcRenderer.send('sync-folder');  // Send sync-folder event to main process
 });
 
 ipcRenderer.on('upload-status', (event, { status, message }) => {
@@ -62,7 +67,6 @@ ipcRenderer.on('upload-progress', (event, { file, progress, remainingTime }) => 
     progressLabel.textContent = `${file}: ${progress}%`;
   }
 
-  // Update time estimation
   const timeEstimationDiv = document.getElementById('timeEstimation');
   if (remainingTime >= 0) {
     timeEstimationDiv.textContent = `Estimated time remaining: ${remainingTime} seconds`;
