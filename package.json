@@ -1,0 +1,35 @@
+{
+  "name": "Foto-Owl-electornJS-PoC",
+  "version": "1.0.0",
+  "description": "aws s3 uplaod app",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron .",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.614.0",
+    "@aws-sdk/config-resolver": "^3.374.0",
+    "@aws-sdk/credential-provider-env": "^3.609.0",
+    "@aws-sdk/lib-storage": "^3.614.0",
+    "aws-sdk": "^2.1653.0",
+    "dotenv": "^16.4.5",
+    "electron-squirrel-startup": "^1.0.1"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.4.0",
+    "@electron-forge/maker-deb": "^7.4.0",
+    "@electron-forge/maker-rpm": "^7.4.0",
+    "@electron-forge/maker-squirrel": "^7.4.0",
+    "@electron-forge/maker-zip": "^7.4.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.4.0",
+    "@electron-forge/plugin-fuses": "^7.4.0",
+    "@electron/fuses": "^1.8.0",
+    "electron": "^31.2.1"
+  }
+}
