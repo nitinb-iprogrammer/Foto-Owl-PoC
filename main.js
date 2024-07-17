@@ -67,7 +67,7 @@ async function uploadFiles(event, files) {
       client: s3Client,
       params: {
         Bucket: YOUR_BUCKET_NAME,
-        Key: file.relativePath,
+        Key: file.relativePath || file.name,
         Body: fileContent,
       },
     });
