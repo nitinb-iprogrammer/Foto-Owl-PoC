@@ -19,7 +19,7 @@ const s3Client = new S3Client({
   },
 });
 
-const WATCH_FOLDER = path.join(app.getPath('documents'), 'foto-owl-upload-folder');
+const WATCH_FOLDER = path.join(app.getPath('documents'), 'Foto-Owl');
 fs.mkdirSync(WATCH_FOLDER, { recursive: true });
 
 let mainWindow;
