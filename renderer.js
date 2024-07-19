@@ -3,18 +3,36 @@ const { ipcRenderer } = require('electron');
 const fileInput = document.getElementById('fileInput');
 const uploadButton = document.getElementById('uploadButton');
 const syncButton = document.getElementById('syncButton'); // New Sync button
+const uploadHistoryDiv = document.getElementById('uploadHistory');
+const totalProgressPercentage = document.getElementById('totalProgressPercentage');
+const totalProgressBarInner = document.getElementById('totalProgressBarInner');
+const countFilesUploaded = document.getElementById('countFilesUploaded');
+
+let totalFiles = 0;
+let uploadedFilesCount = 0;
+let totalUploadedSize = 0;
+let totalSize = 0;
 
 fileInput.addEventListener('change', () => {
   if (fileInput.files.length > 0) {
     uploadButton.disabled = false;
+    totalFiles = fileInput.files.length;
+    countFilesUploaded.textContent = `Files Uploaded: 0 / ${totalFiles}`;
   } else {
     uploadButton.disabled = true;
+    totalFiles = 0;
+    countFilesUploaded.textContent = `Files Uploaded: 0 / 0`;
   }
 });
 
 uploadButton.addEventListener('click', () => {
   const files = Array.from(fileInput.files);
   uploadButton.disabled = true;  // Disable upload button
+  totalFiles = files.length;
+  uploadedFilesCount = 0;
+  totalUploadedSize = 0;
+  totalSize = files.reduce((acc, file) => acc + file.size, 0);
+  countFilesUploaded.textContent = `Files Uploaded: 0 / ${totalFiles}`;
   ipcRenderer.send('upload-files', files.map(file => ({
     path: file.path,
     name: file.name,
@@ -27,52 +45,26 @@ syncButton.addEventListener('click', () => {
 });
 
 ipcRenderer.on('upload-status', (event, { status, message }) => {
+  console.log("status, message--------",status, message)
   const statusDiv = document.getElementById('status');
   const statusMessage = document.createElement('p');
   statusMessage.textContent = message;
-  statusDiv.appendChild(statusMessage);
+  // statusDiv.appendChild(statusMessage);
+
+  // Add to history
+  const historyMessage = document.createElement('p');
+  historyMessage.textContent = message;
+  uploadHistoryDiv.appendChild(historyMessage);
+
+  if (status === 'success') {
+    uploadedFilesCount = uploadedFilesCount + 1;
+    countFilesUploaded.textContent = `Files Uploaded: ${uploadedFilesCount} / ${totalFiles}`;
+  }
 });
 
 ipcRenderer.on('upload-progress', (event, { file, progress, remainingTime }) => {
-  let progressBar = document.getElementById(`progress-${file}`);
-  if (!progressBar) {
-    const progressContainer = document.getElementById('progressContainer');
-    const progressDiv = document.createElement('div');
-    progressDiv.id = `progress-${file}`;
-    progressDiv.style.marginBottom = '10px';
-
-    const progressLabel = document.createElement('span');
-    progressLabel.textContent = `${file}: ${progress}%`;
-    progressLabel.id = `progress-label-${file}`;
-
-    const progressBarOuter = document.createElement('div');
-    progressBarOuter.style.width = '100%';
-    progressBarOuter.style.backgroundColor = '#ccc';
-    progressBarOuter.style.height = '20px';
-
-    const progressBarInner = document.createElement('div');
-    progressBarInner.style.height = '20px';
-    progressBarInner.style.width = `${progress}%`;
-    progressBarInner.style.backgroundColor = '#4caf50';
-    progressBarInner.id = `progress-bar-inner-${file}`;
-
-    progressBarOuter.appendChild(progressBarInner);
-    progressDiv.appendChild(progressLabel);
-    progressDiv.appendChild(progressBarOuter);
-    progressContainer.appendChild(progressDiv);
-  } else {
-    const progressBarInner = document.getElementById(`progress-bar-inner-${file}`);
-    progressBarInner.style.width = `${progress}%`;
-    const progressLabel = document.getElementById(`progress-label-${file}`);
-    progressLabel.textContent = `${file}: ${progress}%`;
-  }
-
-  const timeEstimationDiv = document.getElementById('timeEstimation');
-  if (remainingTime >= 0) {
-    timeEstimationDiv.textContent = `Estimated time remaining: ${remainingTime} seconds`;
-  } else {
-    timeEstimationDiv.textContent = 'Calculating time estimation...';
-  }
+  const progressBar = document.getElementById('progressBar');
+  progressBar.value = progress;
 });
 
 ipcRenderer.on('upload-complete', () => {

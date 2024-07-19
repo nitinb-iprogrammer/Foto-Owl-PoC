@@ -6,7 +6,7 @@ const { Upload } = require('@aws-sdk/lib-storage');
 const chokidar = require('chokidar');
 require('dotenv').config();
 
-const YOUR_ACCESS_KEY = process.env.YOUR_ACCESS_KEY; 
+const YOUR_ACCESS_KEY = process.env.YOUR_ACCESS_KEY;
 const YOUR_SECRET_KEY = process.env.YOUR_SECRET_KEY;
 const YOUR_BUCKET_REGION = process.env.YOUR_BUCKET_REGION;
 const YOUR_BUCKET_NAME = process.env.YOUR_BUCKET_NAME;
@@ -58,7 +58,7 @@ ipcMain.on('sync-folder', async (event) => {
 async function uploadFiles(event, files) {
   const totalSize = files.reduce((acc, file) => acc + file.size, 0);
   let uploadedSize = 0;
-  const startTime = Date.now();
+  let demSize = 0;
 
   async function uploadFile(file) {
     const fileContent = fs.readFileSync(file.path);
@@ -71,35 +71,28 @@ async function uploadFiles(event, files) {
         Body: fileContent,
       },
     });
-
     upload.on('httpUploadProgress', (progress) => {
-      const progressPercentage = Math.round((progress.loaded / progress.total) * 100);
-      const elapsedTime = (Date.now() - startTime) / 1000; // seconds
-      uploadedSize += progress.loaded;
-      const estimatedTotalTime = (elapsedTime / uploadedSize) * totalSize; // seconds
-      const remainingTime = estimatedTotalTime - elapsedTime; // seconds
-
+      uploadedSize = uploadedSize + (progress.loaded - demSize);
+      demSize = progress.loaded;
+      const progressPercentage = Math.round((uploadedSize / totalSize) * 100);
       const progressData = {
         file: file.name,
         progress: progressPercentage,
-        remainingTime: Math.round(remainingTime),
       };
-
       if (event.reply) {
         event.reply('upload-progress', progressData);
       } else {
         mainWindow.webContents.send('upload-progress', progressData);
       }
     });
-
     return upload.done();
   }
 
+  
   for (const file of files) {
     try {
       await uploadFile(file);
       const statusData = { status: 'success', message: `Successfully uploaded: ${file.name}` };
-
       if (event.reply) {
         event.reply('upload-status', statusData);
       } else {
@@ -139,34 +132,34 @@ function startWatchingFolder() {
     const fileName = path.basename(filePath);
     const fileSize = fs.statSync(filePath).size;
     const relativePath = path.relative(WATCH_FOLDER, filePath);
-    const files = [{ path: filePath, name: fileName, size: fileSize, relativePath }];
-    
-    await uploadFiles(mainWindow.webContents, files);
-  });
 
-  console.log(`Watching folder: ${WATCH_FOLDER}`);
+    const file = { path: filePath, name: fileName, size: fileSize, relativePath };
+    await uploadFiles(null, [file]);
+  });
 }
 
 function listFilesInFolder(folderPath) {
-  const files = [];
+  const fileList = [];
 
-  function explore(folderPath) {
-    const items = fs.readdirSync(folderPath);
-
-    items.forEach(item => {
-      const itemPath = path.join(folderPath, item);
-      const stats = fs.statSync(itemPath);
+  function readDirRecursive(directory) {
+    const files = fs.readdirSync(directory);
+    files.forEach((file) => {
+      const fullPath = path.join(directory, file);
+      const stats = fs.statSync(fullPath);
 
       if (stats.isDirectory()) {
-        explore(itemPath);
+        readDirRecursive(fullPath);
       } else {
-        const fileSize = stats.size;
-        const relativePath = path.relative(WATCH_FOLDER, itemPath);
-        files.push({ path: itemPath, name: item, size: fileSize, relativePath });
+        fileList.push({
+          path: fullPath,
+          name: path.basename(fullPath),
+          size: stats.size,
+          relativePath: path.relative(WATCH_FOLDER, fullPath),
+        });
       }
     });
   }
 
-  explore(folderPath);
-  return files;
+  readDirRecursive(folderPath);
+  return fileList;
 }
